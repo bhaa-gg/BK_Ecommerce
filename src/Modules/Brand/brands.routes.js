@@ -12,7 +12,6 @@ const brandRouter = Router();
 
 brandRouter.post("/createBrand",
     multerMiddle(extensible.img).single("image"),
-    // catchErr(nameExists(brandModel)),
     catchErr(find_SubCategory_And_CategoryId),
     catchErr(createBrand),
 )

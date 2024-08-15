@@ -1,18 +1,16 @@
-import slugify from "slugify";
 import { nanoid } from "nanoid";
+import slugify from "slugify";
 import { cloudinaryConnection, ErrorApp } from "../../Utils/index.js";
-import { categoryModel, subCategoryModel, brandModel } from './../../../DB/Models/index.js';
+import { categoryModel } from './../../../DB/Models/index.js';
 
 
 export const createCategory = async (req, res, next) => {
   const { name } = req.body;
-
   const slug = slugify(name, { replacement: "_", lower: true })
 
   if (!req.file) return next(new ErrorApp("Please Upload Image", 404))
 
   const customId = nanoid(4)
-
   const { secure_url, public_id } = await cloudinaryConnection().uploader.upload(
     req.file.path,
     {
@@ -33,6 +31,9 @@ export const createCategory = async (req, res, next) => {
   const newCategory = await categoryModel.create(finalCategory)
   res.status(200).json({ message: "Success", newCategory })
 }
+
+
+
 
 
 
@@ -85,9 +86,7 @@ export const updateCategory = async (req, res, next) => {
 
 export const deleteCategory = async (req, res, next) => {
 
-
   const { id } = req.params;
-
 
   const deletes = await categoryModel.findByIdAndDelete(id);
 
@@ -99,15 +98,6 @@ export const deleteCategory = async (req, res, next) => {
   await cloudinaryConnection().api.delete_folder(categoryPath)
 
 
-  const deleteSubCategory = await subCategoryModel.deleteMany({
-    categoryId: id
-  })
-
-  if (!deleteSubCategory.deletedCount) return next(new ErrorApp("Delete Not Success", 400))
-
-  await brandModel.deleteMany({
-    categoryId: id
-  })
 
   res.json({ message: "Deleted Category Successfully", deletes })
 

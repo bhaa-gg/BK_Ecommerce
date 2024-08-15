@@ -1,8 +1,8 @@
 
+import { nanoid } from 'nanoid';
 import slugify from 'slugify';
 import { cloudinaryConnection, ErrorApp } from '../../Utils/index.js';
-import { nanoid } from 'nanoid';
-import { brandModel, subCategoryModel } from './../../../DB/Models/index.js';
+import { subCategoryModel } from './../../../DB/Models/index.js';
 
 
 
@@ -40,16 +40,21 @@ export const createSubCategory = async (req, res, next) => {
 
 
 export const getSubCategory = async (req, res, next) => {
-    const { id, slug, name } = req.query
+
+    const { id } = req.params
+    const { slug, name } = req.query
 
     const findFilter = {}
     if (id) findFilter._id = id
     if (slug) findFilter.slug = slug
     if (name) findFilter.name = name
 
+
     const find = await subCategoryModel.findOne(findFilter)
 
     return find ? res.status(200).json({ message: "Success", sub_Category: find }) :
+
+
         next(new ErrorApp("This SubCategory Not Found", 404))
 }
 
@@ -100,9 +105,7 @@ export const deleteSubCategory = async (req, res, next) => {
     await cloudinaryConnection().api.delete_resources_by_prefix(path);
     await cloudinaryConnection().api.delete_folder(path);
 
-    await brandModel.deleteMany({
-        subCategoryId: id
-    })
+
 
     res.json({ message: "Deleted Successfully", findSubCategory })
 

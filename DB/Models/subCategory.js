@@ -3,6 +3,7 @@
 import { schemaModels } from './../../src/Utils/index.js';
 
 import mongoose from "../global-setup.js";
+import { brandModel } from './index.js';
 
 const { model, Schema, Types } = mongoose
 
@@ -49,4 +50,17 @@ const subCategorySchema = new Schema({
 })
 
 
+
+
+subCategorySchema.post("findOneAndDelete", async function (doc, next) {
+    const id = this.getQuery()._id;
+
+    const deleteBrand = await brandModel.deleteMany({
+        subCategoryId: id
+    })
+
+    if (!deleteBrand.deletedCount) return next(new ErrorApp("Delete in Brand Not Success", 400))
+
+
+})
 export const subCategoryModel = model('SubCategory', subCategorySchema)

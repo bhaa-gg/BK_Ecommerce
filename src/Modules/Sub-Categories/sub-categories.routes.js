@@ -1,9 +1,9 @@
 import { Router } from "express";
+import { categoryModel, subCategoryModel } from "../../../DB/Models/index.js";
 import { catchErr, findById, multerMiddle, nameExists } from "../../Middlewares/index.js";
-import { createSubCategory, deleteSubCategory, getSubCategory, updateSubCategory } from "./sub-categories.controller.js";
 import { extensible } from "../../Utils/index.js";
-import { subCategoryModel, categoryModel } from "../../../DB/Models/index.js";
-const subCategoryRouter = Router();
+import { createSubCategory, deleteSubCategory, getSubCategory, updateSubCategory } from "./sub-categories.controller.js";
+const subCategoryRouter = Router({ mergeParams: true });
 
 
 
@@ -28,9 +28,14 @@ subCategoryRouter.delete("/deleteSubCategory/:id",
 
 )
 
-subCategoryRouter.get("/getSubCategory",
+subCategoryRouter.get("/",
+    catchErr(getSubCategory)
+)
+
+subCategoryRouter.get("/:id",
     catchErr(getSubCategory)
 )
 
 
 export { subCategoryRouter };
+

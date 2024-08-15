@@ -1,11 +1,15 @@
 import { Router } from "express";
+import { categoryModel } from "../../../DB/Models/index.js";
+import { catchErr, findById, multerMiddle, nameExists } from "../../Middlewares/index.js";
 import { extensible } from "../../Utils/index.js";
+import { subCategoryRouter } from "../Sub-Categories/sub-categories.routes.js";
 import { createCategory, deleteCategory, getCategoryById, updateCategory } from "./categories.controller.js";
-import { findById, nameExists, catchErr, multerMiddle } from "../../Middlewares/index.js";
-import { categoryModel } from "../../../DB/Models/category.js";
 
 
 const categoryRouter = Router();
+
+categoryRouter.use("/:id/subCategory", subCategoryRouter)
+
 
 categoryRouter.post("/createCategory",
     multerMiddle(extensible.img).single("image"),
@@ -35,3 +39,4 @@ categoryRouter.get("/getCategoryById",
 
 
 export { categoryRouter };
+

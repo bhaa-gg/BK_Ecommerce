@@ -1,13 +1,15 @@
 import { ErrorApp } from "../Utils/index.js";
-import { subCategoryModel } from './../../DB/Models/index.js';
+import { addressesModel, subCategoryModel } from './../../DB/Models/index.js';
 
 export const nameExists = (model) => {
     return async (req, res, next) => {
         const { name } = req.body;
         if (name) {
-            const find = await model.findOne({ name })
-            find ? next(new ErrorApp("This Name Already exists", 401)) : next()
+            const find = await model.findOne({ name: name })
+            if (find)
+                next(new ErrorApp("This Name Already exists", 401))
         }
+        next()
     }
 }
 
@@ -19,10 +21,24 @@ export const findById = (model) => {
         if (req.query.categoryId) id = req.query.categoryId;
 
 
-
         const find = await model.findById(id);
         if (!find) return next(new ErrorApp("This Id Not Found", 404))
         req.category = find
+        return next()
+    }
+}
+
+export const findByMail = (model) => {
+    return async (req, res, next) => {
+        let finders = {};
+
+        if (req.body.email) {
+
+            finders.email = req.body.email
+            const find = await model.findOne(finders);
+            if (find) return next(new ErrorApp("This Mail Exists ", 401))
+        }
+
         return next()
     }
 }
@@ -55,5 +71,17 @@ export const checkIfIdsExit = (model) => {
         if (!find) return next(new ErrorApp("This Id Not Found", 404));
         req.findData = find;
         return next()
+    }
+}
+
+
+export const adressKey = () => {
+    return async (req, res, next) => {
+        const {
+            country, city, buildingNumber, postalCode, floorNumber,
+        } = req.body
+        const findAdd = await addressesModel.findOne({ userId: req.authUser._id, country, city, buildingNumber, postalCode, floorNumber })
+        if (findAdd) return next(new ErrorApp("this address already exists for this user ", 402));
+        next();
     }
 }

@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { proudctModel } from "../../../DB/Models/index.js";
-import { calcPrice, cloudinaryConnection, ErrorApp, SlugTitle } from "../../Utils/index.js";
+import { apiFeaturs, calcPrice, cloudinaryConnection, ErrorApp, SlugTitle } from "../../Utils/index.js";
 
 
 
@@ -53,17 +53,14 @@ export const addProducts = async (req, res, next) => {
         subCategoryId: brandDocument.subCategoryId._id,
         brandId: brandDocument._id,
     }
-
-
     const newPrand = await proudctModel.create(productObject)
     res.status(201).json({ message: "Success ", newPrand })
-
 }
+
 
 
 export const updateProduct = async (req, res, next) => {
     const { price, title, stock, badge, overview, specs, discountAmount, discountType } = req.body;
-
 
 
     const Proudct = req.category
@@ -95,24 +92,30 @@ export const updateProduct = async (req, res, next) => {
 
 
 export const listProducts = async (req, res, next) => {
-    const { limit = 2, page = 1 } = req.query
 
 
-    const skip = (page - 1) * limit
 
-    // const products = await proudctModel.find().limit(limit).skip(skip)
+    // const find_proudctModel = await proudctModel.paginate(
+    //     finalFilters,
+    //     {
+    //         page,
+    //         skip,
+    //         limit,
+    //         select: "-Images --spescs -categoryId -subCategoryId -brandId",
+    //          sort: { appliedPrice: 1 },
+    //     },
+    // )
 
-    const find_proudctModel = await proudctModel.paginate(
-        {},
-        {
-            page,
-            skip,
-            limit,
-            //select: "-Images --spescs -categoryId -subCategoryId -brandId",
-            //sort: { appliedPrice: 1 },
-        },
-    )
-    res.json({ message: "success", find_proudctModel })
+
+
+
+
+
+
+    const myFilterClass = new apiFeaturs(proudctModel.find(), req.query).paginataion().search().sort().fields().filters()
+
+    let proudct = await myFilterClass.mongoosequery
+    res.json({ message: "success", proudct, limit: myFilterClass.query.limit })
 }
 
 
