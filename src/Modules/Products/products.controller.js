@@ -1,6 +1,6 @@
 import { nanoid } from "nanoid";
 import { proudctModel } from "../../../DB/Models/index.js";
-import { apiFeaturs, calcPrice, cloudinaryConnection, ErrorApp, SlugTitle } from "../../Utils/index.js";
+import { apiFeaturs, calcPrice, cloudinaryConnection, ErrorApp, ReviewStatus, SlugTitle } from "../../Utils/index.js";
 
 
 
@@ -112,7 +112,10 @@ export const listProducts = async (req, res, next) => {
 
 
 
-    const myFilterClass = new apiFeaturs(proudctModel.find(), req.query).paginataion().search().sort().fields().filters()
+    const myFilterClass = new apiFeaturs(proudctModel.find().populate({
+        path: "Reviews",
+        match: { reviewStatus: ReviewStatus.Approved },
+    }), req.query)
 
     let proudct = await myFilterClass.mongoosequery
     res.json({ message: "success", proudct, limit: myFilterClass.query.limit })

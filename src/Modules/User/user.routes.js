@@ -4,6 +4,7 @@ import { userModel } from "../../../DB/Models/index.js";
 import { authorization, catchErr, findById, findByMail } from "../../Middlewares/index.js";
 import { UserType } from "../../Utils/enums.js";
 import { allUsers, changeUserPassword, deleteUser, getUser, login, registerUser, updateOneUser, updateUser, verifyMail } from "./user.controller.js";
+import { verifyTokens } from "../../Common/Utils/index.js";
 
 
 const userRouter = Router();
@@ -28,6 +29,7 @@ userRouter.get("/",
 
 
 userRouter.get("/verifyMail/verifyMail",
+    catchErr(verifyTokens(process.env.CONFIRMED_MAIL)),
     catchErr(verifyMail)
 )
 

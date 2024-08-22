@@ -54,13 +54,11 @@ export const registerUser = async (req, res, next) => {
 export const verifyMail = async (req, res, next) => {
 
 
-  const myVerify = await verifyTokens(req.query.userId, process.env.CONFIRMED_MAIL);
 
 
-  if (myVerify.error) return next(new ErrorApp(myVerify.error, 400));
+  const user = req.authUser
 
-
-  const updateConfirmedMail = await userModel.updateOne({ _id: myVerify.theUser._id }, { isEmailVerified: true })
+  const updateConfirmedMail = await userModel.updateOne({ _id: user._id }, { isEmailVerified: true })
 
 
   res.status(200).json({ message: "Verified Success", updateConfirmedMail })

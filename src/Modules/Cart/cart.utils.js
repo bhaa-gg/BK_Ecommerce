@@ -2,7 +2,7 @@ import { proudctModel } from "../../../DB/Models/index.js";
 
 
 
-export const checkProductStock = async (productId, quantity) => await proudctModel.findOne({ productId, stock: { $gte: quantity } })
+export const checkProductStock = async (productId, quantity) => await proudctModel.findOne({ _id: productId, stock: { $gte: quantity } })
 
 
 export const calcSubTotal = async (products) => {

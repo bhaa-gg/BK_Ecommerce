@@ -1,3 +1,4 @@
+import mongoose from "../../DB/global-setup.js";
 import { ErrorApp } from "../Utils/index.js";
 import { addressesModel, subCategoryModel } from './../../DB/Models/index.js';
 
@@ -19,10 +20,11 @@ export const findById = (model) => {
         if (req.params.id) id = req.params.id;
         if (req.body.categoryId) id = req.body.categoryId;
         if (req.query.categoryId) id = req.query.categoryId;
+        if (req.authUser) id = req.authUser._id;
 
 
         const find = await model.findById(id);
-        if (!find) return next(new ErrorApp("This Id Not Found", 404))
+        if (!find) return next(new ErrorApp("This Id Not Found in " + mongoose.modelNames(model), 404))
         req.category = find
         return next()
     }

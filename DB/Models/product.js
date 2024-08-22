@@ -107,8 +107,14 @@ const proudctShema = new Schema({
         required: false,
     },
 
-}, { ...schemaModels })
+}, { ...schemaModels, toJSON: { virtuals: true }, toObject: { virtuals: true } })
 
 
 
+
+proudctShema.virtual("Reviews", {
+    ref: "Review",
+    localField: "_id",
+    foreignField: "productId",
+})
 export const proudctModel = model("Proudct", proudctShema)

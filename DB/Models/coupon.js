@@ -3,7 +3,6 @@
 
 import { DiscountType, schemaModels } from '../../src/Utils/index.js';
 import mongoose from "../global-setup.js";
-const ObjectId = mongoose.Types.ObjectId;
 
 const { model, Schema, Types } = mongoose;
 
@@ -68,4 +67,33 @@ const couponSchema = new Schema({
 
 
 
+
+
 export const couponModel = model('Coupon', couponSchema)
+
+
+
+const ChangesCouponSchema = new Schema({
+
+    couponId: {
+        type: Schema.Types.ObjectId,
+        ref: "Coupon",
+        required: true,
+    },
+    updatedBy: {
+        type: Schema.Types.ObjectId,
+        ref: "User",
+        required: true,
+    },
+    changes: {
+        type: Object,
+        required: true,
+    },
+
+}, {
+    ...schemaModels
+})
+
+
+
+export const ChangesCouponModel = model('ChangesCoupon', ChangesCouponSchema)

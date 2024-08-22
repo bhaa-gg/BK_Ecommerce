@@ -35,11 +35,14 @@ export const verifyTokens = (SYG) => {
     return async (req, res, next) => {
 
         let myToken;
+        let token;
+        if (req.headers.token) token = req.headers.token
+        if (req.query.userId) token = req.query.userId
 
-        if (!SYG || !req.headers.token) return next(new ErrorApp("Error Token or Signature", 403));
+        if (!SYG || !token) return next(new ErrorApp("Error Token or Signature", 403));
 
         try {
-            myToken = jwt.verify(req.headers.token, SYG);
+            myToken = jwt.verify(token, SYG);
         } catch (error) {
             return next(new ErrorApp(error, 403))
         }

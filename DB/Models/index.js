@@ -6,4 +6,5 @@ export * from "./coupon.js";
 export * from "./product.js";
 export * from "./subCategory.js";
 export * from "./User.js";
+export * from "./review.js";
 
