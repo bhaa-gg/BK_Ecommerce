@@ -16,7 +16,7 @@ export const sendMail = async ({
 		secure: false,
 		auth: {
 			user: "bhaatiti281@gmail.com",
-			pass: "kniyzwjkgmosuhfo	",
+			pass: "kniyzwjkgmosuhfo",
 		},
 		service: "gmail",
 		tls: {
@@ -210,8 +210,6 @@ export const sendMail = async ({
         
         `,
 	});
-
-
 
 	return info;
 }

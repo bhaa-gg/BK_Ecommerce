@@ -59,8 +59,8 @@ const orderSchema = new Schema({
         type: Number,
         required: true,
     },
-    couponCode: {
-        type: String,
+    couponId: {
+        type: Schema.Types.ObjectId,
         ref: "Coupon",
     },
     deliveryDate: {
@@ -87,6 +87,7 @@ const orderSchema = new Schema({
     },
     deliveredAt: Date,
     cancelledAt: Date,
+    payment_intent: String,
 
 }, {
     ...schemaModels
@@ -95,24 +96,29 @@ const orderSchema = new Schema({
 
 
 orderSchema.post("save", async function (doc, next) {
+    if (doc.payment_intent && (doc.statusOfOrder == ordersStatus.Pending || doc.statusOfOrder == ordersStatus.Refunded)) return;
 
-    if (doc.products.length && doc.statusOfOrder != ordersStatus.Cancelled && doc.statusOfOrder != ordersStatus.Placed) {
+    if (doc.products.length && doc.statusOfOrder != ordersStatus.Cancelled && doc.statusOfOrder != ordersStatus.Delivered) {
+
         for (const p of doc.products) {
             await proudctModel.updateOne({ _id: p.productId }, { $inc: { stock: -p.quantity } })
         }
     }
-    if (doc.couponCode && doc.statusOfOrder != ordersStatus.Cancelled && doc.statusOfOrder != ordersStatus.Placed) {
+    if (doc.couponCode && doc.statusOfOrder != ordersStatus.Cancelled && doc.statusOfOrder != ordersStatus.Delivered) {
+        console.log("update_usageCouponCount_AfterOrder");
         await couponModel.updateOne(
             { couponCode: doc.couponCode, "Users.userId": doc.userId },
             { $inc: { "Users.$.usageCount": 1 } }
         );
     }
     if (doc.statusOfOrder == ordersStatus.Cancelled) {
+        console.log("update_ProductsCount_AfterCanceledOrder");
+
         for (const p of doc.products) {
             await proudctModel.updateOne({ _id: p.productId }, { $inc: { stock: p.quantity } })
         }
     }
-    next()
+    next();
 
 })
 export const orderModel = model('Order', orderSchema)

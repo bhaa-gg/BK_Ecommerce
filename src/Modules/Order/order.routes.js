@@ -2,7 +2,7 @@ import { Router } from "express";
 import { verifyTokens } from "../../Common/Utils/verifyToken.js";
 import { authorization, catchErr } from "../../Middlewares/index.js";
 import { UserType } from "../../Utils/index.js";
-import { cancelOrder, checkOuts, createOrder, deliverdOrder, getUserOrder } from "./order.controler.js";
+import { stripeWebHookLocal, cancelOrder, checkOuts, createOrder, deliverdOrder, getUserOrder, paymentWithStripe, refundPayments } from "./order.controler.js";
 const orderRouter = Router();
 
 
@@ -30,10 +30,21 @@ orderRouter.patch("/cancelOrder/:orderId",
     catchErr(authorization([UserType.Buyer, UserType.USER])),
     catchErr(deliverdOrder)
 )
-orderRouter.post("/ch",
+orderRouter.post("/checkOut/:orderId",
+    catchErr(verifyTokens(process.env.LOGIN)),
+    catchErr(authorization([UserType.Buyer, UserType.USER])),
+    catchErr(paymentWithStripe)
+)
+orderRouter.post("/refund/:orderId",
+    catchErr(verifyTokens(process.env.LOGIN)),
+    catchErr(authorization([UserType.Buyer, UserType.USER])),
+    catchErr(refundPayments)
+)
+
+orderRouter.post("/webhook",
     // catchErr(verifyTokens(process.env.LOGIN)),
     // catchErr(authorization([UserType.Buyer, UserType.USER])),
-    catchErr(checkOuts)
+    catchErr(stripeWebHookLocal)
 )
 
 export { orderRouter };

@@ -17,7 +17,6 @@ export const verifyToken = (SYG) => {
         jwt.verify(theToken, SYG, async (err, data) => {
 
             if (err) return next(new ErrorApp(err, 404));
-            console.log(data);
 
             const theUser = await userModel.findById(data.userId)
 

@@ -1,7 +1,8 @@
 import { nanoid } from "nanoid";
 import slugify from "slugify";
-import { cloudinaryConnection, ErrorApp } from "../../Utils/index.js";
+import { cloudinaryConnection } from "../../Utils/index.js";
 import { categoryModel } from './../../../DB/Models/index.js';
+import { ErrorApp } from './../../Utils/ErrorApp.js';
 
 
 export const createCategory = async (req, res, next) => {
@@ -33,34 +34,30 @@ export const createCategory = async (req, res, next) => {
 }
 
 
-
-
-
-
 export const getCategoryById = async (req, res, next) => {
   const { id, slug, name } = req.query
-  const queryFilter = {}
 
+  const queryFilter = {}
   if (id) queryFilter._id = id
   if (slug) queryFilter.slug = slug
   if (name) queryFilter.name = name
 
   const findCategory = await categoryModel.findOne(queryFilter);
-  return findCategory ? res.status(200).json({ message: "Success", findCategory }) : next(new ErrorApp("Couldn't find category", 404))
+  return findCategory ?
+    res.status(200).json({ message: "Success", findCategory })
+    : next(new ErrorApp("Couldn't find category", 404))
 }
 
 
 
 
 export const updateCategory = async (req, res, next) => {
-
   const { name } = req.body;
   if (name) {
     const slug = slugify(name, { replacement: "_", lower: true })
     req.category.name = name
     req.category.slug = slug
   }
-
   if (req.file) {
 
     const publicIds = req.category.Images.public_id.split('/').pop()
@@ -90,16 +87,12 @@ export const deleteCategory = async (req, res, next) => {
 
   const deletes = await categoryModel.findByIdAndDelete(id);
 
-  if (!deletes) next(new ErrorApp("Id not found", 404));
+  if (!deletes) return next(new ErrorApp("Id not found", 404));
 
   const categoryPath = `${process.env.UPLOADS_FOLDER}/Categories/${deletes.customId}`
 
   await cloudinaryConnection().api.delete_resources_by_prefix(categoryPath)
   await cloudinaryConnection().api.delete_folder(categoryPath)
 
-
-
   res.json({ message: "Deleted Category Successfully", deletes })
-
-
 }

@@ -1,5 +1,5 @@
 import { hashSync } from "bcrypt";
-import { Genderse, schemaModels, UserType } from "../../src/Utils/index.js";
+import { Genderse, schemaModels, UserProviders, UserType } from "../../src/Utils/index.js";
 import mongoose from "../global-setup.js";
 
 const { model, Schema } = mongoose;
@@ -46,6 +46,15 @@ const userSchema = new Schema({
     },
     passwordChangedAt: Date,
     isMarketAsDeleted: {
+        type: Boolean,
+        default: false,
+    },
+    provider: {
+        type: String,
+        enum: Object.values(UserProviders),
+        default: UserProviders.SYSTEM,
+    },
+    isLoggedIn: {
         type: Boolean,
         default: false,
     },

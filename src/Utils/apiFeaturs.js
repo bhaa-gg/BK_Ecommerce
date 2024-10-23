@@ -5,13 +5,11 @@ export class apiFeaturs {
         this.mongoosequery = mongoosequery
         this.query = query
     }
-
     sort() {
         if (this.query.sort) {
             const sort = this.query.sort.split(",").join(" ");
             this.mongoosequery.sort(sort);
         }
-
         return this;
     }
     fields() {

@@ -8,6 +8,7 @@ export const multerMiddle = (allowed = extensible.img) => {
     const fileFilter = (req, file, cb) => {
         allowed.includes(file.mimetype) ? cb(null, true) :
             cb(new ErrorApp("invalid file type", 400, "invalid file type"), false)
+
     }
 
     const fileUploaded = multer({

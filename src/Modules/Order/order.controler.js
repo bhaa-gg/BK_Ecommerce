@@ -6,6 +6,8 @@ import { calcSubTotal } from "../Cart/cart.utils.js"
 import { couponValidation } from "./Utils/Coupon.js"
 import { checkOut } from "../../Common/Utils/checkOut.js"
 import Stripe from 'stripe';
+import { checkOutFun, confirmPaymentIntent, createPaymentIntent, createStripeCoupon, refundPaymentIntent } from "../../Paymnt-Handler/Stripe.js"
+import { makeQrCode } from "../../Common/Utils/QrCode.js"
 
 
 
@@ -16,6 +18,7 @@ export const createOrder = async (req, res, next) => {
     const { addressId, contactNumber, shippingFee, VAT, couponCode, payMentIntegration } = req.body
 
     const cart = await cartModel.findOne({ userId: user._id }).populate("products.productId")
+
 
     if (!cart || cart.products.length == 0) return next(new ErrorApp("empty cart ", 404))
 
@@ -29,8 +32,9 @@ export const createOrder = async (req, res, next) => {
     let total = subTotal;
     if (VAT) total += VAT
     if (shippingFee) total += shippingFee
+    let coupon;
     if (couponCode) {
-        const coupon = await couponValidation(couponCode, user._id)
+        coupon = await couponValidation(couponCode, user._id)
         if (coupon.error) return next(new ErrorApp(coupon.message))
         total = calcPrice(total, { type: coupon.coupon.couponType, amount: coupon.coupon.couponAmount })
     }
@@ -65,25 +69,19 @@ export const createOrder = async (req, res, next) => {
         subTotal: total,
         shippingFee,
         VAT,
-        couponCode,
+        couponId: coupon.coupon._id,
         payMentIntegration,
         statusOfOrder: orderStatuse,
         deliveredBy: user._id,
     })
 
 
-    // const ch = await checkOut(user, total, myAddress).catch(err => next(new ErrorApp(err, 400)));
-
-
-
-    // console.log(ch);
 
     const order = await orderObject.save();
-
     cart.products = [];
     cart.save();
 
-    res.json({ message: "Success", order: orderObject, ch })
+    res.json({ message: "Success", order: orderObject, qrCode })
 
 }
 
@@ -133,6 +131,8 @@ export const getUserOrder = async (req, res, next) => {
     // if (!userOrders.length) return next(new ErrorApp("No Orders for this user ", 404))
 
     const orders = await userOrders.mongoosequery
+    const qrCode = await makeQrCode(order);
+
 
     return res.json({ message: "Success", orders })
 }
@@ -145,7 +145,7 @@ export const cancelOrder = async (req, res, next) => {
     const order = await orderModel.findOne({
         _id: orderId,
         userId: user._id,
-        statusOfOrder: { $nin: [ordersStatus.Cancelled, ordersStatus.Placed] },
+        statusOfOrder: { $in: [ordersStatus.Pending] },
         deliveryDate: { $gt: DateTime.now() }
     });
     if (!order) return next(new ErrorApp("No Order for this user", 404))
@@ -165,17 +165,18 @@ export const deliverdOrder = async (req, res, next) => {
     const user = req.authUser
     const { orderId } = req.params
 
+
     const order = await orderModel.findOne({
         _id: orderId,
         userId: user._id,
-        statusOfOrder: { $ne: ordersStatus.Cancelled },
+        statusOfOrder: { $in: [ordersStatus.Confirmed, ordersStatus.Pending, ordersStatus.onWay] },
         deliveryDate: { $gt: DateTime.now() }
     });
     if (!order) return next(new ErrorApp("No Order for this user", 404))
 
     // if (order.deliveryDate > DateTime.now()) return next(new ErrorApp("Your Order not ready now for send", 404))
 
-    order.statusOfOrder = ordersStatus.Placed;
+    order.statusOfOrder = ordersStatus.Delivered;
     order.deliveredAt = DateTime.now();
     order.deliveredBy = user._id;
 
@@ -183,3 +184,84 @@ export const deliverdOrder = async (req, res, next) => {
 
     return res.json({ message: "Success", order: orderFinal })
 }
+
+
+export const paymentWithStripe = async (req, res, next) => {
+    const { orderId } = req.params;
+    const user = req.authUser;
+
+    const order = await orderModel.findOne({ statusOfOrder: ordersStatus.Pending, _id: orderId, userId: user._id })
+        .populate([
+            {
+                path: "addressId",
+                select: "city country",
+            },
+            {
+                path: "couponId",
+                select: "couponCode couponAmount couponType",
+            },
+        ]);
+    if (!order) return next(new ErrorApp("this order not found for this user", 404))
+
+    const paymentIntent = await createPaymentIntent({
+        amount: order.subTotal,
+        currency: "egp"
+    })
+
+    const paymentObject = {
+        user,
+        amount: order.subTotal,
+        address: order.addressId,
+        orderId: order._id,
+        discounts: []
+    }
+    if (order.couponId._id) {
+        const couponStripe = await createStripeCoupon(order.couponId);
+        paymentObject.discounts.push({ coupon: couponStripe.id });
+    }
+    const payment = await checkOutFun(paymentObject);
+
+
+
+    order.payment_intent = paymentIntent.id;
+    const orderFinal = await order.save();
+    res.json({ message: "success", order: orderFinal, payment, paymentIntent })
+
+}
+
+
+
+
+export const refundPayments = async (req, res, next) => {
+
+    const { orderId } = req.params;
+
+    const order = await orderModel.findOne({ statusOfOrder: ordersStatus.Confirmed, _id: orderId })
+    if (!order) return next(new ErrorApp("this order not found for this user", 404))
+
+    const refundPayment = await refundPaymentIntent({ paymentIntent_id: order.payment_intent.toString() })
+
+    if (refundPayment.status != "succeeded") return next(new ErrorApp(refundPayment.message, 404))
+
+
+    order.statusOfOrder = ordersStatus.Refunded
+    await order.save()
+
+    res.json({ message: "Refund Payment success", refundPayment })
+}
+
+
+export const stripeWebHookLocal = async (req, res, next) => {
+    const data = req.body;
+    if (data.type == 'checkout.session.completed') {
+        const orderId = data.data.object.metadata.orderId;
+        const order = await orderModel.findByIdAndUpdate(orderId, { statusOfOrder: ordersStatus.Confirmed });
+        const confirmPayment = await confirmPaymentIntent(
+            {
+                paymentIntent_id: order.payment_intent.toString(),
+            }
+        )
+    }
+    res.json({ message: "success", data })
+}
+

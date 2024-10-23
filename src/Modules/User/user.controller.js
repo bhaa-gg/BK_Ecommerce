@@ -2,9 +2,11 @@
 import { compareSync } from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import { addressesModel, userModel } from '../../../DB/Models/index.js';
-import { MakeJwt, verifyTokens } from '../../Common/Utils/index.js';
+import { MakeJwt, verifyGoogle } from '../../Common/Utils/index.js';
 import { sendMail } from '../../Services/index.js';
-import { apiFeaturs, ErrorApp } from '../../Utils/index.js';
+import { apiFeaturs, ErrorApp, UserProviders } from '../../Utils/index.js';
+import { nanoid } from 'nanoid';
+
 
 
 export const registerUser = async (req, res, next) => {
@@ -19,7 +21,7 @@ export const registerUser = async (req, res, next) => {
   } = req.body;
 
   const newUser = new userModel({
-    userName, email, password, age, userType, gender
+    userName, email, password, age, userType, gender,
   })
 
   const addressInstances = new addressesModel({
@@ -27,20 +29,27 @@ export const registerUser = async (req, res, next) => {
   })
 
 
+
   const myToken = MakeJwt({ userId: newUser._id }, process.env.CONFIRMED_MAIL)
+
   if (myToken.error) return next(new ErrorApp(User.error, 400))
 
+
   const confirmedLink = `${req.protocol}://${req.headers.host}/user/verifyMail/verifyMail?userId=${myToken.token}`
+
 
   const senedeMail = await sendMail({
     to: email,
     subject: `Econmmerce Application `,
-    text: `Hello ${userName}  `,
+    text: `Hello ${userName}`,
     tokenLink: confirmedLink,
     myHost: req.headers.host,
   })
 
+  console.log("befox  senedeMail ");
   if (senedeMail.rejected.length) return next(new ErrorApp("Error email sending", 500))
+
+  console.log("after  senedeMail ");
 
   const savedUser = await newUser.save()
   const savedAddress = await addressInstances.save()
@@ -72,15 +81,16 @@ export const login = async (req, res, next) => {
 
   if (!user || !compareSync(req.body.password, user.password)) return next(new ErrorApp("Check your password or Mail", 300))
 
-  jwt.sign({
-    userId: user._id,
-    userName: user.userName,
-    email: user.email,
-    password: user.password,
-  }, process.env.LOGIN, (err, data) => {
-    if (err) return next(new ErrorApp(err, 400))
-    res.json({ user, token: data })
-  })
+  jwt.sign(
+    {
+      userId: user._id,
+      userName: user.userName,
+      email: user.email,
+      password: user.password,
+    }, process.env.LOGIN, (err, data) => {
+      if (err) return next(new ErrorApp(err, 400))
+      res.json({ user, token: data })
+    })
 }
 
 export const allUsers = async (req, res, next) => {
@@ -176,8 +186,6 @@ export const deleteUser = async (req, res, next) => {
 
 export const changeUserPassword = async (req, res, next) => {
 
-
-
   const { oldPassword, newPassword } = req.body;
 
   const user = req.user;
@@ -202,3 +210,61 @@ export const changeUserPassword = async (req, res, next) => {
 }
 
 
+export const logeInWithGoogle = async (req, res, next) => {
+  // const user = req.authUser;
+  const { payload, userid } = await verifyGoogle(req.headers.token).catch(err => next(new ErrorApp(err)))
+
+  if (!payload.email_verified) return next(new ErrorApp("Please Verify your Email", 400))
+
+  const theUser = await userModel.findOne({ email: payload.email, provider: UserProviders.GOOGle })
+
+  if (!theUser) return next(new ErrorApp("This user does not exist", 404))
+
+  const theToken = MakeJwt({
+    userId: theUser._id,
+    userName: theUser.userName,
+    email: theUser.email,
+    password: theUser.password,
+  }, process.env.LOGIN)
+
+  if (theToken.error) return next(new ErrorApp(theToken.error, 400))
+
+  theUser.isLoggedIn = true;
+
+  const finalUser = await theUser.save()
+
+
+
+  res.json({ message: "Success", theUser: finalUser, theToken })
+
+}
+
+export const SingUpWithGoogle = async (req, res, next) => {
+
+
+  const { payload, userid } = await verifyGoogle(req.headers.token).catch(err => next(new ErrorApp(err)))
+
+  if (!payload.email_verified) return next(new ErrorApp("Please Verify your Email", 400))
+
+  const theUser = await userModel.findOne({ email: payload.email })
+
+  if (theUser) return next(new ErrorApp("This user already exist", 404))
+
+
+  const nanoid = customAlphabet(digits, 8);
+  const password = nanoid();
+
+  const newUser = new userModel({
+    userName: payload.name,
+    email: payload.email,
+    password: password,
+    provider: UserProviders.GOOGle
+  })
+
+  const finalUser = await newUser.save()
+
+
+
+  res.json({ message: "Success", theUser: finalUser })
+
+}

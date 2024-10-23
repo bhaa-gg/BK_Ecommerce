@@ -3,7 +3,7 @@ import { Router } from "express";
 import { userModel } from "../../../DB/Models/index.js";
 import { authorization, catchErr, findById, findByMail } from "../../Middlewares/index.js";
 import { UserType } from "../../Utils/enums.js";
-import { allUsers, changeUserPassword, deleteUser, getUser, login, registerUser, updateOneUser, updateUser, verifyMail } from "./user.controller.js";
+import { allUsers, changeUserPassword, deleteUser, getUser, logeInWithGoogle, login, registerUser, SingUpWithGoogle, updateOneUser, updateUser, verifyMail } from "./user.controller.js";
 import { verifyTokens } from "../../Common/Utils/index.js";
 
 
@@ -24,6 +24,15 @@ userRouter.get("/",
 )
 
 
+userRouter.post("/logeInWithGoogle",
+    catchErr(logeInWithGoogle)
+)
+
+userRouter.post("/SingUpWithGoogle",
+    catchErr(SingUpWithGoogle)
+)
+
+
 
 
 
@@ -32,21 +41,16 @@ userRouter.get("/verifyMail/verifyMail",
     catchErr(verifyTokens(process.env.CONFIRMED_MAIL)),
     catchErr(verifyMail)
 )
-
-
 userRouter.patch("update/:id",
     catchErr(findById(userModel)),
     catchErr(findByMail(userModel)),
     catchErr(updateOneUser)
 )
-
 userRouter.put("/changeUserPassword",
 
     catchErr(authorization([UserType.Buyer])),
     catchErr(changeUserPassword)
 )
-
-
 userRouter.get("get/:id",
     catchErr(getUser)
 )

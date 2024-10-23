@@ -1,6 +1,8 @@
 import { nanoid } from "nanoid";
 import { proudctModel } from "../../../DB/Models/index.js";
 import { apiFeaturs, calcPrice, cloudinaryConnection, ErrorApp, ReviewStatus, SlugTitle } from "../../Utils/index.js";
+import { getIo } from "../../Common/Utils/Socket.utils.js";
+import { makeQrCode } from "../../Common/Utils/QrCode.js";
 
 
 
@@ -9,10 +11,8 @@ export const addProducts = async (req, res, next) => {
     const { title, overview, specs, price, discountAmount, discountType, stock, badge } = req.body;
 
 
-
     if (!req.files.length)
         return next(new ErrorApp("No images uploaded", 400));
-
 
     const brandDocument = req.findData
 
@@ -54,6 +54,8 @@ export const addProducts = async (req, res, next) => {
         brandId: brandDocument._id,
     }
     const newPrand = await proudctModel.create(productObject)
+
+    getIo().emit("addSuccess", newPrand);
     res.status(201).json({ message: "Success ", newPrand })
 }
 
@@ -106,19 +108,15 @@ export const listProducts = async (req, res, next) => {
     //     },
     // )
 
-
-
-
-
-
-
     const myFilterClass = new apiFeaturs(proudctModel.find().populate({
         path: "Reviews",
         match: { reviewStatus: ReviewStatus.Approved },
     }), req.query)
 
     let proudct = await myFilterClass.mongoosequery
-    res.json({ message: "success", proudct, limit: myFilterClass.query.limit })
+    const qrCode = await makeQrCode({ title: proudct.at(0).title, appliedPrice: proudct.at(0).appliedPrice });
+
+    res.json({ message: "success", proudct, limit: myFilterClass.query.limit, qrCode })
 }
 
 
@@ -138,6 +136,8 @@ export const deleteProudct = async (req, res, next) => {
     await cloudinaryConnection().api.delete_resources_by_prefix(path);
     await cloudinaryConnection().api.delete_folder(path);
 
+
+    getIo().emit("deletesuccess", proudtc._id);
 
     res.json({ message: "Deleted Success" });
 }

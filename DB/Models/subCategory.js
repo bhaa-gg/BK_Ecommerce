@@ -1,6 +1,6 @@
 
 
-import { schemaModels } from './../../src/Utils/index.js';
+import { ErrorApp, schemaModels } from './../../src/Utils/index.js';
 
 import mongoose from "../global-setup.js";
 import { brandModel } from './index.js';
@@ -54,6 +54,7 @@ const subCategorySchema = new Schema({
 
 subCategorySchema.post("findOneAndDelete", async function (doc, next) {
     const id = this.getQuery()._id;
+    if (!doc) return next();
 
     const deleteBrand = await brandModel.deleteMany({
         subCategoryId: id

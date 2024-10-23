@@ -1,3 +1,4 @@
+import { ErrorApp } from "../../src/Utils/ErrorApp.js";
 import { schemaModels } from "../../src/Utils/schemaModels.js";
 
 import mongoose from "../global-setup.js";
@@ -47,15 +48,13 @@ const categorySchema = new Schema({
 
 categorySchema.post("findOneAndDelete", async function (doc, next) {
     const id = this.getQuery()._id;
+    if (!doc) return next()
     const deleteSubCategory = await subCategoryModel.deleteMany({
         categoryId: id
     })
     const deleteBrand = await brandModel.deleteMany({
         categoryId: id
     })
-
-    if (!deleteBrand.deletedCount) return next(new ErrorApp("Delete in Brand Not Success", 400))
-    if (!deleteSubCategory.deletedCount) return next(new ErrorApp("Delete in SubCategory Not Success", 400))
 
 
 })

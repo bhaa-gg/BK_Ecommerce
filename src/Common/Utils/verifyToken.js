@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import { userModel } from '../../../DB/Models/index.js';
 import { ErrorApp } from '../../Utils/index.js';
 
+import { OAuth2Client } from 'google-auth-library';
 
 
 
@@ -28,6 +29,16 @@ export const MakeJwt = (userData, SYG) => {
 }
 
 
+export async function verifyGoogle(token) {
+    const client = new OAuth2Client();
+    const ticket = await client.verifyIdToken({
+        idToken: token,
+        audience: process.env.CLIENT_ID,
+    });
+    const payload = ticket.getPayload();
+    const userid = payload['sub'];
+    return { payload, userid };
+}
 
 
 export const verifyTokens = (SYG) => {

@@ -57,7 +57,7 @@ const couponSchema = new Schema({
 
     createdBy: {
         type: Schema.Types.ObjectId,
-        required: true,
+        // required: true,
         ref: "User",
     }
 

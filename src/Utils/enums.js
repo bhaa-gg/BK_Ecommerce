@@ -31,10 +31,19 @@ export const ordersStatus = {
     Placed: "placed",
     Cancelled: "cancelled",
     Refunded: "refunded",
+    Confirmed: "confirmed",
+    Delivered: "delivered",
+    Dropped: "dropped",
+    onWay: "onway",
+    Returned: "returned",
 };
 
 export const ReviewStatus = {
     Pending: "pending",
     Approved: "Approved",
     Refunded: "refunded",
+};
+export const UserProviders = {
+    SYSTEM: "SYSTEM",
+    GOOGle: "GOOGle",
 };

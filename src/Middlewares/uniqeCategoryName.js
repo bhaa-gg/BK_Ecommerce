@@ -33,12 +33,12 @@ export const findById = (model) => {
 export const findByMail = (model) => {
     return async (req, res, next) => {
         let finders = {};
-
         if (req.body.email) {
-
             finders.email = req.body.email
             const find = await model.findOne(finders);
             if (find) return next(new ErrorApp("This Mail Exists ", 401))
+        } else {
+            return next(new ErrorApp("Please Enter Your Email ", 401))
         }
 
         return next()
@@ -58,6 +58,7 @@ export const find_SubCategory_And_CategoryId = async (req, res, next) => {
 export const checkIfIdsExit = (model) => {
     return async (req, res, next) => {
         const { category, subCategory, brand } = req.query;
+
 
         const theBrand = {};
         if (brand) theBrand._id = brand

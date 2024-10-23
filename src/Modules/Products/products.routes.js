@@ -15,7 +15,7 @@ productRouter.post("/add",
 
 
 productRouter.put("/update/:id",
-    // multerMiddle(extensible.img).array("image", 5),
+    multerMiddle(extensible.img).array("image", 5),
     catchErr(findById(proudctModel)),
     catchErr(updateProduct)
 )

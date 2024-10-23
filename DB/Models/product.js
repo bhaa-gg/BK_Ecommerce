@@ -38,7 +38,7 @@ const proudctShema = new Schema({
         amount: {
             type: Number,
             min: 0,
-            default: 0,
+            default: 1,
         },
         type: {
             type: String,
@@ -74,6 +74,7 @@ const proudctShema = new Schema({
                 },
                 public_id: {
                     type: String,
+                    default: "1.0",
                     required: true,
                     unique: true,
                 },
